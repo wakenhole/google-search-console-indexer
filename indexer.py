@@ -1,4 +1,5 @@
 import os
+import argparse
 import json
 import requests
 import xmltodict
@@ -19,9 +20,6 @@ SERVICE_ACCOUNT_FILE = 'key.json'
 
 # Define the scope for accessing the Search Console API
 SCOPES = ['https://www.googleapis.com/auth/indexing']
-
-# Sitemap URL to fetch the URLs
-sitemap_url = 'https://www.exonoob.in/sitemap.xml'  # Change the url with your own Sitemap URL.
 
 def authenticate_with_google():
     """Authenticate using service account credentials."""
@@ -47,8 +45,12 @@ def fetch_sitemap_urls(sitemap_url):
         console.print(f"[bold red]Error fetching sitemap: {e}[/bold red]")
         raise
 
-def index_url(service, url):
+def index_url(service, url, dry_run=False):
     """Index or reindex the given URL using the Indexing API."""
+    if dry_run:
+        time.sleep(0.05)  # Simulate network delay
+        return {"status": "dry_run"}
+
     body = {
         "url": url,
         "type": "URL_UPDATED"  # URL_UPDATED for reindexing, URL_DELETED for removal
@@ -61,6 +63,12 @@ def index_url(service, url):
         return None
 
 def main():
+    parser = argparse.ArgumentParser(description="Google Search Console Indexer")
+    parser.add_argument("sitemap_url", help="The URL of the sitemap to fetch URLs from")
+    parser.add_argument("--dry-run", action="store_true", help="Simulate indexing without making API calls")
+    args = parser.parse_args()
+    sitemap_url = args.sitemap_url
+
     # Create the main panel with title and GitHub link centered
     panel_content = ("🚀 [bold magenta]Google Search Console Indexer[/bold magenta] 🚀")
     console.print(Panel(panel_content, expand=False))
@@ -81,9 +89,12 @@ def main():
 
     # Index each URL with progress tracking
     for url in track(urls, description="Indexing URLs..."):
-        response = index_url(service, url)
+        response = index_url(service, url, dry_run=args.dry_run)
         if response:
-            table.add_row(url, "[green]Success[/green]", "Indexed successfully")
+            if args.dry_run:
+                table.add_row(url, "[yellow]Dry Run[/yellow]", "Simulated request")
+            else:
+                table.add_row(url, "[green]Success[/green]", "Indexed successfully")
             successful += 1
         else:
             table.add_row(url, "[red]Failed[/red]", "Error occurred during indexing")
@@ -93,12 +104,15 @@ def main():
     console.print(table)
 
     # Summary
-    summary_text = Text()
-    summary_text.append(f"Total URLs Processed: {len(urls)}\n", style="bold yellow")
-    summary_text.append(f"Successful: {successful}\n", style="green")
-    summary_text.append(f"Failed: {failed}\n", style="red")
+    if args.dry_run:
+        console.print(Panel(f"Total URLs Fetched: {len(urls)}", title="📊 [bold yellow]Dry Run Summary[/bold yellow]", expand=False))
+    else:
+        summary_text = Text()
+        summary_text.append(f"Total URLs Processed: {len(urls)}\n", style="bold yellow")
+        summary_text.append(f"Successful: {successful}\n", style="green")
+        summary_text.append(f"Failed: {failed}\n", style="red")
 
-    console.print(Panel(summary_text, title="📊 [bold cyan]Indexing Summary[/bold cyan]", expand=False))
+        console.print(Panel(summary_text, title="📊 [bold cyan]Indexing Summary[/bold cyan]", expand=False))
 
 if __name__ == "__main__":
     main()
