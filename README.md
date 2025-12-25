@@ -39,9 +39,9 @@ Alternatively, install them manually:
 pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client requests xmltodict rich
 ```
 
-## Usage
+### 4. Usage
 
-### Run Indexing
+#### Run Indexing
 
 To fetch URLs from a sitemap and index them:
 
@@ -49,7 +49,7 @@ To fetch URLs from a sitemap and index them:
 python indexer.py <sitemap_url>
 ```
 
-### Dry Run
+####  Dry Run
 
 To simulate the process without sending actual requests to Google:
 
